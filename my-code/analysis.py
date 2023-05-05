@@ -3,80 +3,59 @@ import pvml
 import matplotlib.pyplot as plt
 
 
-# LOAD THE LIST OF CLASSES
-words = open("classes.txt").read().split()
-print(words)
+def get_network(file="mlp.npz"):
+    net = pvml.MLP.load(file)
+    return net
 
 
-# LOAD TRAINING AND TEST DATA
-data = np.load("train.npz")
-Xtrain = data["arr_0"]
-Ytrain = data["arr_1"]
-print(Xtrain.shape, Ytrain.shape)
-data = np.load("test.npz")
-Xtest = data["arr_0"]
-Ytest = data["arr_1"]
-print(Xtest.shape, Ytest.shape)
+def show_weights(net, words):
+    w = net.weights[0]
+    maxval = np.abs(w).max()
+    for klass in range(35):
+        plt.subplot(5, 7, klass + 1)
+        plt.imshow(w[:, klass].reshape(20, 80), vmin=-
+                   maxval, vmax=maxval, cmap="seismic")
+        plt.title(words[klass])
+    plt.show()
 
 
-# MEAN/VARIANCE NORMALIZAZION
-mu = Xtrain.mean(0)
-std = Xtrain.std(0)
-Xtrain = (Xtrain - mu) / std
-Xtest = (Xtest - mu) / std
+def make_confusion_matrix(predictions, lables):
+    cmat = np.zeros((35, 35))
+    for i in range(predictions.size):
+        cmat[lables[i], predictions[i]] += 1
+    return cmat
 
 
-# MEASURE THE ACCURACY ON A GIVEN SET
-def accuracy(net, X, Y):
-    labels, probs = net.inference(X)
-    acc = (labels == Y).mean()
-    return acc * 100
-
-
-# LOAD THE WEIGHTS
-net = pvml.MLP.load("mlp.npz")
-
-
-# SHOW THE WEIGHTS FOR A GIVEN CLASS 
-# w = net.weights[0]
-# image = w[:, 25].reshape(20, 80)
-# plt.imshow(image, cmap="seismic",
-#            vmin=-0.6, vmax=0.6)
-# plt.colorbar()
-# plt.show()
-
+def display_confusion_matrix(cmat, words):
+    print(" "*10, end="")
+    for j in range(35):
+        print(f"{words[j][:4]:4}", end="")
+    print()
+    for i in range(35):
+        print(f"{words[i]:10}", end="")
+        for j in range(35):
+            val = int(cmat[i, j])
+            print(f"{val:4d}", end="")
+        print()
 
 # DISPLAY THE CONFUSION MATRIX
-def show_confusion_matrix(Y, predictions):
+
+
+def show_confusion_matrix(Y, predictions, words):
     classes = Y.max() + 1
     cm = np.empty((classes, classes))
     for klass in range(classes):
         sel = (Y == klass).nonzero()
         counts = np.bincount(predictions[sel], minlength=classes)
         cm[klass, :] = 100 * counts / max(1, counts.sum())
-    plt.figure(3)
+    plt.figure(3, figsize=(20, 20))
     plt.clf()
-    plt.imshow(cm, vmin=0, vmax=100, cmap=plt.cm.Blues)
+    plt.xticks(range(classes), words, rotation=45)
+    plt.yticks(range(classes), words)
+    plt.imshow(cm, vmin=0, vmax=100, cmap=plt.cm.Reds)
     for i in range(classes):
         for j in range(classes):
             txt = "{:.1f}".format(cm[i, j], ha="center", va="center")
             col = ("black" if cm[i, j] < 75 else "white")
             plt.text(j - 0.25, i, txt, color=col)
     plt.title("Confusion matrix")
-
-
-predictions, probs = net.inference(Xtest)
-show_confusion_matrix(Ytest, predictions)
-plt.show()
-
-
-# COMPUTE AND PRINT THE CONFISION MATRIX
-nclasses = len(words)
-cm = np.zeros((nclasses, nclasses))
-for i in range(Ytest.size):
-    cm[Ytest[i], predictions[i]] += 1
-cm = cm / cm.sum(1, keepdims=True)
-for i in range(nclasses):
-    for j in range(nclasses):
-        print(f"{cm[i, j]:.2f}", end=" ")
-    print()
