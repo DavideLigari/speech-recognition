@@ -7,9 +7,12 @@
 *.bcf
 *.out
 *.txt
-__pycache__/*
 *.zip
 *.toc
 *.bbl
 *.blg
 Davide_Ligari/*
+data/*
+teacher-code/*
+.vscode/*
+*.pyc
