@@ -11,8 +11,9 @@ def get_network(file="mlp.npz"):
 def show_weights(net, words):
     w = net.weights[0]
     maxval = np.abs(w).max()
+    plt.figure(figsize=(20, 10))
     for klass in range(35):
-        plt.subplot(5, 7, klass + 1, figsize=(20, 10))
+        plt.subplot(5, 7, klass + 1)
         plt.imshow(w[:, klass].reshape(20, 80), vmin=-
                    maxval, vmax=maxval, cmap="seismic")
         plt.title(words[klass])
